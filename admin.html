@@ -895,6 +895,13 @@
 
   <script>
     const configKey = "school-admin-supabase-config";
+    const adminCodeSessionKey = "school-admin-access-code";
+    const adminCodeInput = document.getElementById("invitationCode");
+    adminCodeInput.type = "password";
+    adminCodeInput.autocomplete = "current-password";
+    adminCodeInput.spellcheck = false;
+    adminCodeInput.placeholder = "ADMIN_ACCESS_CODE";
+    adminCodeInput.setAttribute("aria-label", "Admin access code");
     const regionNames = {
       taoyuan: "桃園",
       kaohsiung: "高雄",
@@ -937,6 +944,7 @@
     let historicalScoresDraft = [];
     let filters = { search: "", region: "all", ownership: "all", sortBy: "updated_at" };
     let loading = false;
+    let nextAdminMutationAt = 0;
 
     loadConfig();
     refreshDistrictOptions();
@@ -948,13 +956,22 @@
       return {
         supabaseUrl: document.getElementById("supabaseUrl").value.trim().replace(/\/$/, ""),
         anonKey: document.getElementById("anonKey").value.trim(),
-        invitationCode: document.getElementById("invitationCode").value.trim().toUpperCase()
+        adminAccessCode: document.getElementById("invitationCode").value.trim()
       };
     }
 
     function saveConfig() {
       const config = getConfig();
-      localStorage.setItem(configKey, JSON.stringify(config));
+      // Keep the administrator credential only for the current browser tab.
+      localStorage.setItem(configKey, JSON.stringify({
+        supabaseUrl: config.supabaseUrl,
+        anonKey: config.anonKey
+      }));
+      if (config.adminAccessCode) sessionStorage.setItem(adminCodeSessionKey, config.adminAccessCode);
+      else sessionStorage.removeItem(adminCodeSessionKey);
+      // Keep the existing request-field name until the backend API can be
+      // versioned; its value is now always the administrator access code.
+      config.invitationCode = config.adminAccessCode;
       return config;
     }
 
@@ -963,7 +980,12 @@
         const saved = JSON.parse(localStorage.getItem(configKey) || "{}");
         document.getElementById("supabaseUrl").value = saved.supabaseUrl || "";
         document.getElementById("anonKey").value = saved.anonKey || "";
-        document.getElementById("invitationCode").value = saved.invitationCode || "";
+        document.getElementById("invitationCode").value = sessionStorage.getItem(adminCodeSessionKey) || "";
+        // Remove credentials persisted by older versions of this page.
+        if (saved.invitationCode) {
+          delete saved.invitationCode;
+          localStorage.setItem(configKey, JSON.stringify(saved));
+        }
       } catch {}
     }
 
@@ -1056,13 +1078,23 @@
       return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    async function waitForAdminMutationSlot(action) {
+      if (!new Set(["adminUpsertSchool", "adminDeleteSchool", "adminClearHistoricalScores"]).has(action)) return;
+      const delay = Math.max(0, nextAdminMutationAt - Date.now());
+      if (delay) await wait(delay);
+      // The server permits 10 writes/minute/action. Keep a small margin so CSV
+      // imports remain reliable without repeatedly triggering HTTP 429.
+      nextAdminMutationAt = Date.now() + 6500;
+    }
+
     async function callBackend(action, payload = {}, options = {}) {
       const config = saveConfig();
       if (!config.supabaseUrl || !config.anonKey || !config.invitationCode) {
-        throw new Error("請先填入 Supabase URL、Anon Key 與管理邀請碼。");
+        throw new Error("請先填入 Supabase URL、Anon Key 與 ADMIN_ACCESS_CODE。");
       }
 
-      const maxRetries = options.retries ?? 3;
+      await waitForAdminMutationSlot(action);
+      const maxRetries = options.retries ?? (action === "adminListSchools" ? 2 : 0);
       let lastError;
 
       for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
@@ -1087,7 +1119,7 @@
         } catch (error) {
           lastError = error;
           const status = error.status || 0;
-          const retriable = status === 429 || status >= 500 || /temporarily unavailable|failed to fetch|network/i.test(error.message || "");
+          const retriable = action === "adminListSchools" && (status === 429 || status >= 500 || /temporarily unavailable|failed to fetch|network/i.test(error.message || ""));
           if (!retriable || attempt === maxRetries) throw error;
           document.getElementById("loadedState").textContent = `服務忙碌，重試中 ${attempt + 1}/${maxRetries}`;
           await wait(700 * (attempt + 1));
