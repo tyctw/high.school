@@ -693,7 +693,7 @@
         </label>
         <label>
           管理邀請碼
-          <input id="invitationCode" placeholder="例如 TYCTW" />
+          <input id="invitationCode" type="email" autocomplete="username" placeholder="管理員 Email" />
         </label>
         <button class="btn success" id="connectBtn" type="button">連線讀取</button>
       </section>
@@ -895,13 +895,13 @@
 
   <script>
     const configKey = "school-admin-supabase-config";
-    const adminCodeSessionKey = "school-admin-access-code";
-    const adminCodeInput = document.getElementById("invitationCode");
-    adminCodeInput.type = "password";
-    adminCodeInput.autocomplete = "current-password";
-    adminCodeInput.spellcheck = false;
-    adminCodeInput.placeholder = "ADMIN_ACCESS_CODE";
-    adminCodeInput.setAttribute("aria-label", "Admin access code");
+    const adminSessionKey = "school-admin-auth-session";
+    const adminEmailInput = document.getElementById("invitationCode");
+    adminEmailInput.type = "email";
+    adminEmailInput.autocomplete = "username";
+    adminEmailInput.spellcheck = false;
+    adminEmailInput.placeholder = "管理員 Email";
+    adminEmailInput.setAttribute("aria-label", "Administrator email");
     const regionNames = {
       taoyuan: "桃園",
       kaohsiung: "高雄",
@@ -955,24 +955,18 @@
     function getConfig() {
       return {
         supabaseUrl: document.getElementById("supabaseUrl").value.trim().replace(/\/$/, ""),
-        anonKey: document.getElementById("anonKey").value.trim(),
-        adminAccessCode: document.getElementById("invitationCode").value.trim()
+        anonKey: document.getElementById("anonKey").value.trim()
       };
     }
 
     function saveConfig() {
       const config = getConfig();
-      // Keep the administrator credential only for the current browser tab.
+      // Store only public connection settings; credentials are never persisted.
       localStorage.setItem(configKey, JSON.stringify({
         supabaseUrl: config.supabaseUrl,
         anonKey: config.anonKey
       }));
-      if (config.adminAccessCode) sessionStorage.setItem(adminCodeSessionKey, config.adminAccessCode);
-      else sessionStorage.removeItem(adminCodeSessionKey);
-      // Keep the existing request-field name until the backend API can be
-      // versioned; its value is now always the administrator access code.
-      config.invitationCode = config.adminAccessCode;
-      return config;
+       return config;
     }
 
     function loadConfig() {
@@ -980,13 +974,52 @@
         const saved = JSON.parse(localStorage.getItem(configKey) || "{}");
         document.getElementById("supabaseUrl").value = saved.supabaseUrl || "";
         document.getElementById("anonKey").value = saved.anonKey || "";
-        document.getElementById("invitationCode").value = sessionStorage.getItem(adminCodeSessionKey) || "";
-        // Remove credentials persisted by older versions of this page.
-        if (saved.invitationCode) {
-          delete saved.invitationCode;
-          localStorage.setItem(configKey, JSON.stringify(saved));
-        }
       } catch {}
+    }
+
+    function getAdminSession() {
+      try {
+        const session = JSON.parse(sessionStorage.getItem(adminSessionKey) || "null");
+        return session?.accessToken && session.expiresAt > Date.now() ? session : null;
+      } catch {
+        sessionStorage.removeItem(adminSessionKey);
+        return null;
+      }
+    }
+
+    async function signInAndLoad() {
+      const config = saveConfig();
+      const email = adminEmailInput.value.trim();
+      const password = window.prompt("請輸入 Supabase Auth 密碼：");
+      if (!password) return;
+      if (!config.supabaseUrl || !config.anonKey || !email) {
+        throw new Error("請先填寫 Supabase URL、Anon Key 與管理員 Email。");
+      }
+
+      const response = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: config.anonKey },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.access_token) {
+        throw new Error(data.error_description || data.msg || "管理員登入失敗。");
+      }
+
+      // Keep the short-lived access token only for this browser tab. Passwords
+      // and refresh tokens are never persisted by this page.
+      sessionStorage.setItem(adminSessionKey, JSON.stringify({
+        accessToken: data.access_token,
+        expiresAt: Date.now() + Number(data.expires_in || 3600) * 1000,
+      }));
+      await loadSchools();
+    }
+
+    function signOut() {
+      sessionStorage.removeItem(adminSessionKey);
+      schools = [];
+      render();
+      document.getElementById("loadedState").textContent = "已登出";
     }
 
     function refreshDistrictOptions() {
@@ -1089,8 +1122,12 @@
 
     async function callBackend(action, payload = {}, options = {}) {
       const config = saveConfig();
-      if (!config.supabaseUrl || !config.anonKey || !config.invitationCode) {
-        throw new Error("請先填入 Supabase URL、Anon Key 與 ADMIN_ACCESS_CODE。");
+      const session = getAdminSession();
+      if (!session) {
+        throw new Error("Administrator sign-in is required.");
+      }
+      if (!config.supabaseUrl || !config.anonKey) {
+        throw new Error("請先填入 Supabase URL 與 Anon Key。");
       }
 
       await waitForAdminMutationSlot(action);
@@ -1104,9 +1141,9 @@
             headers: {
               "Content-Type": "application/json",
               apikey: config.anonKey,
-              Authorization: `Bearer ${config.anonKey}`
+               Authorization: `Bearer ${session.accessToken}`
             },
-            body: JSON.stringify({ action, invitationCode: config.invitationCode, ...payload })
+             body: JSON.stringify({ action, ...payload })
           });
           const data = await response.json().catch(() => ({}));
           if (!response.ok || data.error) {
@@ -1798,7 +1835,15 @@
       }
     });
 
-    document.getElementById("connectBtn").addEventListener("click", loadSchools);
+    document.getElementById("connectBtn").textContent = "登入並載入資料";
+    document.getElementById("connectBtn").addEventListener("click", async () => {
+      try {
+        if (getAdminSession()) await loadSchools();
+        else await signInAndLoad();
+      } catch (error) {
+        alert(error.message || "管理員登入失敗。");
+      }
+    });
     document.getElementById("reloadBtn").addEventListener("click", loadSchools);
     document.getElementById("newBtn").addEventListener("click", () => {
       resetForm();
