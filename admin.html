@@ -777,7 +777,24 @@
               </div>
               <div class="two">
                 <label>職群
-                  <input id="vocational_group" placeholder="可留空" />
+                  <input id="vocational_group" list="vocationalGroupOptions" placeholder="可留空；可依名稱自動帶入或從清單選擇" />
+                  <datalist id="vocationalGroupOptions">
+                    <option value="機械群"></option>
+                    <option value="動力機械群"></option>
+                    <option value="電機與電子群"></option>
+                    <option value="化工群"></option>
+                    <option value="土木與建築群"></option>
+                    <option value="商業與管理群"></option>
+                    <option value="外語群"></option>
+                    <option value="設計群"></option>
+                    <option value="農業群"></option>
+                    <option value="食品群"></option>
+                    <option value="家政群"></option>
+                    <option value="餐旅群"></option>
+                    <option value="水產群"></option>
+                    <option value="海事群"></option>
+                    <option value="藝術群"></option>
+                  </datalist>
                 </label>
                 <label>科系 / 類科
                   <input id="department" placeholder="可留空；可從上方科系標籤帶入" />
@@ -933,6 +950,26 @@
       "id", "region", "name", "district", "points", "credits", "type", "ownership",
       "vocational_group", "department", "historical_scores", "min_chinese", "min_english", "min_math", "min_science", "min_social", "min_composition"
     ];
+    const departmentsByVocationalGroup = {
+      "機械群": "機械科、鑄造科、板金科、機械木模科、配管科、模具科、機電科、製圖科、生物產業機電科、電腦機械製圖科",
+      "動力機械群": "汽車科、重機科、飛機修護科、動力機械科、農業機械科、軌道車輛科",
+      "電機與電子群": "資訊科、電子科、控制科、電機科、冷凍空調科、航空電子科、電機空調科",
+      "化工群": "化工科、紡織科、染整科",
+      "土木與建築群": "建築科、土木科、消防工程科、空間測繪科",
+      "商業與管理群": "商業經營科、國際貿易科、會計事務科、資料處理科、不動產事務科、電子商務科、流通管理科、農產行銷科、航運管理科",
+      "外語群": "應用外語科（英文組）、應用外語科（日文組）",
+      "設計群": "家具木工科、美工科、陶瓷工程科、室內空間設計科、圖文傳播科、金屬工藝科、家具設計科、廣告設計科、多媒體設計科、多媒體應用科、室內設計科",
+      "農業群": "農場經營科、園藝科、森林科、野生動物保育科、造園科、畜產保健科",
+      "食品群": "食品加工科、食品科、水產食品科、烘焙科",
+      "家政群": "家政科、服裝科、幼兒保育科、美容科、時尚模特兒科、流行服飾科、時尚造型科、照顧服務科",
+      "餐旅群": "觀光事業科、餐飲管理科",
+      "水產群": "漁業科、水產養殖科",
+      "海事群": "輪機科、航海科",
+      "藝術群": "戲劇科、音樂科、舞蹈科、美術科、影劇科、西樂科、國樂科、電影電視科、表演藝術科、多媒體動畫科、時尚工藝科"
+    };
+    const departmentGroupMatches = Object.entries(departmentsByVocationalGroup)
+      .flatMap(([group, departments]) => departments.split("、").map(department => ({ group, department })))
+      .sort((a, b) => b.department.length - a.department.length);
     const fields = [
       "id", "region", "name", "district", "points", "credits", "type", "ownership", "vocational_group", "department",
       "min_chinese", "min_english", "min_math", "min_science", "min_social", "min_composition"
@@ -1087,6 +1124,7 @@
       fields.district.value = school.county || "";
       fields.type.value = school.levelInfo || "";
       fields.vocational_group.value = school.groupName || "";
+      delete fields.vocational_group.dataset.autoDetected;
       fields.ownership.value = school.ownership || "";
       if (countyToRegion[school.county]) fields.region.value = countyToRegion[school.county];
       refreshDistrictOptions();
@@ -1103,6 +1141,7 @@
       if (!department) return;
       fields.department.value = department.deptName || "";
       fields.vocational_group.value = department.groupName || "";
+      delete fields.vocational_group.dataset.autoDetected;
       fields.type.value = department.levelInfo || "";
       showToast(`已帶入科系：${department.deptName}`);
     }
@@ -1307,6 +1346,27 @@
       return String(value ?? "").trim().replace(/\s+/g, " ").toLowerCase();
     }
 
+    function detectVocationalGroup(name) {
+      const normalizedName = normalizeText(name);
+      return departmentGroupMatches.find(({ department }) => normalizedName.includes(normalizeText(department)))?.group || "";
+    }
+
+    function fillVocationalGroupFromName() {
+      const detectedGroup = detectVocationalGroup(fields.name.value);
+      const wasAutoDetected = fields.vocational_group.dataset.autoDetected === "true";
+      if (!detectedGroup) {
+        if (wasAutoDetected) {
+          fields.vocational_group.value = "";
+          delete fields.vocational_group.dataset.autoDetected;
+        }
+        return;
+      }
+      if (!fields.vocational_group.value.trim() || wasAutoDetected) {
+        fields.vocational_group.value = detectedGroup;
+        fields.vocational_group.dataset.autoDetected = "true";
+      }
+    }
+
     function duplicateKey(school) {
       return [
         school.region,
@@ -1367,6 +1427,7 @@
       document.getElementById("schoolForm").reset();
       refreshDistrictOptions();
       fields.id.value = "";
+      delete fields.vocational_group.dataset.autoDetected;
       historicalScoresDraft = [];
       renderHistoricalEditor();
       document.getElementById("formTitle").textContent = "新增學校";
@@ -1378,6 +1439,7 @@
       const school = schools.find(item => item.id === id);
       if (!school) return;
       for (const key of Object.keys(fields)) fields[key].value = school[key] ?? "";
+      delete fields.vocational_group.dataset.autoDetected;
       refreshDistrictOptions();
       historicalScoresDraft = historicalScoresFromSchool(school);
       renderHistoricalEditor();
@@ -1393,6 +1455,7 @@
       for (const key of Object.keys(fields)) fields[key].value = school[key] ?? "";
       fields.id.value = "";
       fields.name.value = `${school.name}（複製）`;
+      delete fields.vocational_group.dataset.autoDetected;
       refreshDistrictOptions();
       historicalScoresDraft = historicalScoresFromSchool(school);
       renderHistoricalEditor();
@@ -1869,6 +1932,10 @@
       document.getElementById("editor").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     document.getElementById("resetBtn").addEventListener("click", resetForm);
+    fields.name.addEventListener("input", fillVocationalGroupFromName);
+    fields.vocational_group.addEventListener("input", () => {
+      delete fields.vocational_group.dataset.autoDetected;
+    });
     fields.region.addEventListener("change", refreshDistrictOptions);
     document.getElementById("directorySearch").addEventListener("input", renderDirectoryResults);
     document.getElementById("addHistoryBtn").addEventListener("click", () => addHistoricalScore());
