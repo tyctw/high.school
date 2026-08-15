@@ -621,7 +621,7 @@
 
       .row-actions {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
         gap: 8px;
       }
 
@@ -1386,6 +1386,24 @@
       document.getElementById("editor").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
+    function cloneSchool(id) {
+      const school = schools.find(item => item.id === id);
+      if (!school) return;
+
+      for (const key of Object.keys(fields)) fields[key].value = school[key] ?? "";
+      fields.id.value = "";
+      fields.name.value = `${school.name}（複製）`;
+      refreshDistrictOptions();
+      historicalScoresDraft = historicalScoresFromSchool(school);
+      renderHistoricalEditor();
+      document.getElementById("formTitle").textContent = "複製學校資料";
+      document.getElementById("editState").textContent = "待新增";
+      document.getElementById("editor").scrollIntoView({ behavior: "smooth", block: "start" });
+      fields.name.focus();
+      fields.name.select();
+      showToast("已複製資料，請修改名稱後儲存");
+    }
+
     async function deleteSchool(id) {
       const school = schools.find(item => item.id === id);
       if (!school || !confirm(`確定刪除「${school.name}」？`)) return;
@@ -1455,6 +1473,7 @@
           <td data-label="操作">
             <div class="row-actions">
               <button class="small-btn" type="button" title="編輯" onclick="editSchool('${school.id}')">改</button>
+              <button class="small-btn" type="button" title="複製為新資料" onclick="cloneSchool('${school.id}')">複製</button>
               <button class="small-btn danger" type="button" title="刪除" onclick="deleteSchool('${school.id}')">刪</button>
             </div>
           </td>
@@ -1899,6 +1918,7 @@
     document.getElementById("sortBy").addEventListener("change", event => { filters.sortBy = event.target.value; render(); });
 
     window.editSchool = editSchool;
+    window.cloneSchool = cloneSchool;
     window.deleteSchool = deleteSchool;
     window.selectDirectorySchool = selectDirectorySchool;
     window.selectDirectoryDepartment = selectDirectoryDepartment;
