@@ -1143,6 +1143,12 @@
       fields.vocational_group.value = department.groupName || "";
       delete fields.vocational_group.dataset.autoDetected;
       fields.type.value = department.levelInfo || "";
+      
+      if (fields.name.value && department.deptName) {
+        const baseName = fields.name.value.split('(')[0].split('（')[0].trim();
+        fields.name.value = `${baseName}(${department.deptName})`;
+      }
+      
       showToast(`已帶入科系：${department.deptName}`);
     }
 
@@ -1935,6 +1941,17 @@
     fields.name.addEventListener("input", fillVocationalGroupFromName);
     fields.vocational_group.addEventListener("input", () => {
       delete fields.vocational_group.dataset.autoDetected;
+    });
+    fields.department.addEventListener("input", () => {
+      if (fields.name.value) {
+        const baseName = fields.name.value.split('(')[0].split('（')[0].trim();
+        const deptName = fields.department.value.trim();
+        if (deptName) {
+          fields.name.value = `${baseName}(${deptName})`;
+        } else {
+          fields.name.value = baseName;
+        }
+      }
     });
     fields.region.addEventListener("change", refreshDistrictOptions);
     document.getElementById("directorySearch").addEventListener("input", renderDirectoryResults);
