@@ -281,6 +281,9 @@
       background: #eff6ff;
     }
 
+    .grade-calculator summary { cursor: pointer; color: #1e3a8a; font-weight: 900; }
+    .grade-calculator summary::marker { color: var(--blue); }
+    .grade-calculator-content { display: grid; gap: 10px; margin-top: 10px; }
     .grade-calculator p { margin: 0; color: #475569; font-size: 12px; font-weight: 700; }
     .grade-calculator-result { color: #1d4ed8; font-weight: 900; min-height: 22px; }
     .grade-calculator-result.error { color: var(--red); }
@@ -768,8 +771,9 @@
                   <input id="credits" type="number" step="0.1" placeholder="可留空" />
                 </label>
               </div>
-              <section class="grade-calculator" aria-label="會考等級組合自動換算">
-                <strong>會考等級組合自動換算</strong>
+              <details class="grade-calculator" aria-label="會考等級組合自動換算">
+                <summary>會考等級組合自動換算</summary>
+                <div class="grade-calculator-content">
                 <p>可直接選五科的 A、B、C 與總加數；系統會組成等級，並依目前區域自動填入上方門檻。</p>
                 <div class="two">
                   <label>A 數
@@ -812,7 +816,8 @@
                   </label>
                 </div>
                 <output class="grade-calculator-result" id="gradeCombinationResult" aria-live="polite">請輸入五科等級組合</output>
-              </section>
+                </div>
+              </details>
               <div class="history-editor">
                 <div class="history-header">
                   <strong>歷年成績</strong>
