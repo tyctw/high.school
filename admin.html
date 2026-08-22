@@ -150,6 +150,7 @@
     .btn:hover { box-shadow: 0 8px 20px rgba(23, 32, 51, .08); }
     .btn.primary { background: var(--blue); color: white; border-color: var(--blue); }
     .btn.success { background: var(--green); color: white; border-color: var(--green); }
+    .btn.warning { background: var(--amber); color: white; border-color: var(--amber); }
     .btn.danger { background: var(--red); color: white; border-color: var(--red); }
     .btn:disabled { opacity: .55; cursor: wait; }
     .file-input { display: none; }
@@ -270,6 +271,19 @@
 
     .form-grid { display: grid; gap: 13px; }
     .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .grade-calculator {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      background: #eff6ff;
+    }
+
+    .grade-calculator p { margin: 0; color: #475569; font-size: 12px; font-weight: 700; }
+    .grade-calculator-result { color: #1d4ed8; font-weight: 900; min-height: 22px; }
+    .grade-calculator-result.error { color: var(--red); }
 
     .directory-picker {
       display: grid;
@@ -736,6 +750,7 @@
                   <option value="taipei">臺北</option>
                   <option value="tainan">臺南</option>
                   <option value="hsinchu">竹苗</option>
+                  <option value="chiayi">嘉義</option>
                 </select>
               </label>
               <label>學校 / 科別名稱
@@ -753,6 +768,51 @@
                   <input id="credits" type="number" step="0.1" placeholder="可留空" />
                 </label>
               </div>
+              <section class="grade-calculator" aria-label="會考等級組合自動換算">
+                <strong>會考等級組合自動換算</strong>
+                <p>可直接選五科的 A、B、C 與總加數；系統會組成等級，並依目前區域自動填入上方門檻。</p>
+                <div class="two">
+                  <label>A 數
+                    <select id="gradeACount">
+                      <option value="0">0A</option><option value="1">1A</option><option value="2">2A</option><option value="3">3A</option><option value="4">4A</option><option value="5">5A</option>
+                    </select>
+                  </label>
+                  <label>B 數
+                    <select id="gradeBCount">
+                      <option value="0">0B</option><option value="1">1B</option><option value="2">2B</option><option value="3">3B</option><option value="4">4B</option><option value="5">5B</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="two">
+                  <label>C 數
+                    <select id="gradeCCount">
+                      <option value="0">0C</option><option value="1">1C</option><option value="2">2C</option><option value="3">3C</option><option value="4">4C</option><option value="5">5C</option>
+                    </select>
+                  </label>
+                  <label>總加數
+                    <select id="gradePlusCount">
+                      <option value="0">+0</option><option value="1">+1</option><option value="2">+2</option><option value="3">+3</option><option value="4">+4</option><option value="5">+5</option><option value="6">+6</option><option value="7">+7</option><option value="8">+8</option><option value="9">+9</option><option value="10">+10</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="two">
+                  <label>等級組合（可微調 A++、A+）
+                    <input id="gradeCombination" autocomplete="off" placeholder="例如：3A++ 2B+" />
+                  </label>
+                  <label>作文級分
+                    <select id="combinationComposition">
+                      <option value="0">未填／0級分</option>
+                      <option value="1">1級分</option>
+                      <option value="2">2級分</option>
+                      <option value="3">3級分</option>
+                      <option value="4">4級分</option>
+                      <option value="5">5級分</option>
+                      <option value="6">6級分</option>
+                    </select>
+                  </label>
+                </div>
+                <output class="grade-calculator-result" id="gradeCombinationResult" aria-live="polite">請輸入五科等級組合</output>
+              </section>
               <div class="history-editor">
                 <div class="history-header">
                   <strong>歷年成績</strong>
@@ -825,6 +885,7 @@
                 </label>
               </div>
               <div class="form-actions">
+                <button class="btn warning" id="setNotFullBtn" type="button" title="依目前區域填入未滿招的 0 分資料">設為未滿招</button>
                 <button class="btn success" id="saveBtn" type="submit">儲存到 Supabase</button>
                 <button class="btn" id="resetBtn" type="button">清除表單</button>
               </div>
@@ -848,6 +909,7 @@
               <option value="taipei">臺北</option>
               <option value="tainan">臺南</option>
               <option value="hsinchu">竹苗</option>
+              <option value="chiayi">嘉義</option>
             </select>
             <select id="filterOwnership">
               <option value="all">全部屬性</option>
@@ -926,7 +988,8 @@
       changhua: "彰化",
       taipei: "臺北",
       tainan: "臺南",
-      hsinchu: "竹苗"
+      hsinchu: "竹苗",
+      chiayi: "嘉義"
     };
     const districtsByRegion = {
       taoyuan: "中壢區 平鎮區 龍潭區 楊梅區 新屋區 觀音區 桃園區 龜山區 八德區 大溪區 復興區 大園區 蘆竹區".split(" "),
@@ -935,7 +998,8 @@
       changhua: "彰化市 芬園鄉 花壇鄉 秀水鄉 鹿港鎮 福興鄉 線西鄉 和美鎮 伸港鄉 員林鎮 社頭鄉 永靖鄉 埔心鄉 溪湖鎮 大村鄉 埔鹽鄉 田中鎮 北斗鎮 田尾鄉 埤頭鄉 溪州鄉 竹塘鄉 二林鎮 大城鄉 芳苑鄉 二水鄉".split(" "),
       taipei: "中正區 大同區 中山區 松山區 大安區 萬華區 信義區 士林區 北投區 內湖區 南港區 文山區 萬里區 金山區 板橋區 汐止區 深坑區 石碇區 瑞芳區 平溪區 雙溪區 貢寮區 新店區 坪林區 烏來區 永和區 中和區 土城區 三峽區 樹林區 鶯歌區 三重區 新莊區 泰山區 林口區 蘆洲區 五股區 八里區 淡水區 三芝區 石門區 仁愛區 安樂區 暖暖區 七堵區".split(" "),
       tainan: "中西區 東區 南區 北區 安平區 安南區 永康區 歸仁區 新化區 左鎮區 玉井區 楠西區 南化區 仁德區 關廟區 龍崎區 官田區 麻豆區 佳里區 西港區 七股區 將軍區 學甲區 北門區 新營區 後壁區 白河區 東山區 六甲區 下營區 柳營區 鹽水區 善化區 大內區 山上區 新市區 安定區".split(" "),
-      hsinchu: "竹北市 湖口鄉 新豐鄉 新埔鎮 關西鎮 芎林鄉 寶山鄉 竹東鎮 五峰鄉 橫山鄉 尖石鄉 北埔鄉 峨眉鄉 東區 北區 香山區 竹南鎮 頭份市 三灣鄉 南庄鄉 獅潭鄉 後龍鎮 通霄鎮 苑裡鎮 苗栗市 造橋鄉 頭屋鄉 公館鄉 大湖鄉 泰安鄉 銅鑼鄉 三義鄉 西湖鄉 卓蘭鎮".split(" ")
+      hsinchu: "竹北市 湖口鄉 新豐鄉 新埔鎮 關西鎮 芎林鄉 寶山鄉 竹東鎮 五峰鄉 橫山鄉 尖石鄉 北埔鄉 峨眉鄉 東區 北區 香山區 竹南鎮 頭份市 三灣鄉 南庄鄉 獅潭鄉 後龍鎮 通霄鎮 苑裡鎮 苗栗市 造橋鄉 頭屋鄉 公館鄉 大湖鄉 泰安鄉 銅鑼鄉 三義鄉 西湖鄉 卓蘭鎮".split(" "),
+      chiayi: "東區 西區".split(" ")
     };
     const countyToRegion = {
       "桃園市": "taoyuan",
@@ -944,7 +1008,8 @@
       "彰化縣": "changhua",
       "臺北市": "taipei", "新北市": "taipei", "基隆市": "taipei",
       "臺南市": "tainan",
-      "新竹縣": "hsinchu", "新竹市": "hsinchu", "苗栗縣": "hsinchu"
+      "新竹縣": "hsinchu", "新竹市": "hsinchu", "苗栗縣": "hsinchu",
+      "嘉義市": "chiayi", "嘉義縣": "chiayi"
     };
     const csvHeaders = [
       "id", "region", "name", "district", "points", "credits", "type", "ownership",
@@ -1237,6 +1302,162 @@
 
     function currentTaiwanYearLabel() {
       return `${new Date().getFullYear() - 1911}年`;
+    }
+
+    function regionUsesCredits(region) {
+      return new Set(["taoyuan", "kaohsiung", "central", "chiayi"]).has(region);
+    }
+
+    function parseGradeCombination(value) {
+      const text = String(value || "").trim().toUpperCase().replaceAll("＋", "+");
+      if (!text) return { grades: [], error: "請輸入五科等級組合" };
+
+      const pattern = /(\d*)\s*(A\+\+|A\+|B\+\+|B\+|A|B|C)/g;
+      const grades = [];
+      let match;
+      while ((match = pattern.exec(text)) !== null) {
+        const count = match[1] ? Number(match[1]) : 1;
+        if (!Number.isInteger(count) || count < 1 || count > 5) {
+          return { grades: [], error: "每個等級前的數量須為 1 至 5" };
+        }
+        grades.push(...Array(count).fill(match[2]));
+      }
+
+      const leftover = text.replace(pattern, "").replace(/[\s,，、+]/g, "");
+      if (leftover || grades.length !== 5) {
+        return { grades: [], error: "請輸入剛好五科，例如：3A++ 2B+" };
+      }
+      return { grades };
+    }
+
+    function calculateGradeCombination(region, grades, composition) {
+      const standardPoints = { "A++": 6, "A+": 6, A: 6, "B++": 4, "B+": 4, B: 4, C: 2 };
+      const standardCredits = { "A++": 7, "A+": 6, A: 5, "B++": 4, "B+": 3, B: 2, C: 1 };
+      const detailedPoints = { "A++": 7, "A+": 6, A: 5, "B++": 4, "B+": 3, B: 2, C: 1 };
+      const sum = table => grades.reduce((total, grade) => total + table[grade], 0);
+      const compositionLevel = Number(composition) || 0;
+
+      if (region === "taoyuan") {
+        return { points: sum(standardPoints) + [0, 1, 2, 2, 3, 3, 3][compositionLevel], credits: sum(standardCredits) };
+      }
+      if (region === "kaohsiung") {
+        return { points: sum(standardPoints), credits: sum(standardCredits) };
+      }
+      if (region === "central") {
+        const credits = { "A++": 21, "A+": 18, A: 15, "B++": 12, "B+": 9, B: 6, C: 3 };
+        return { points: sum(standardPoints), credits: sum(credits) + compositionLevel };
+      }
+      if (region === "changhua") {
+        const points = { "A++": 9, "A+": 8, A: 7, "B++": 6, "B+": 5, B: 4, C: 3 };
+        return { points: sum(points), credits: null };
+      }
+      if (region === "taipei" || region === "tainan") {
+        return { points: sum(detailedPoints) + [0, .1, .2, .4, .6, .8, 1][compositionLevel], credits: null };
+      }
+      if (region === "hsinchu") {
+        return { points: sum(standardPoints), credits: null };
+      }
+      if (region === "chiayi") {
+        const points = { "A++": 5, "A+": 5, A: 5, "B++": 3, "B+": 3, B: 3, C: 1 };
+        const credits = { "A++": 9, "A+": 8, A: 7, "B++": 5, "B+": 4, B: 3, C: 1 };
+        const compositionPoints = compositionLevel >= 5 ? 2 : compositionLevel >= 3 ? 1.5 : compositionLevel >= 1 ? 1 : 0;
+        return { points: sum(points) + compositionPoints, credits: sum(credits) };
+      }
+      return null;
+    }
+
+    function gradePlusCount(grades) {
+      return grades.reduce((total, grade) => total + (grade.endsWith("++") ? 2 : grade.endsWith("+") ? 1 : 0), 0);
+    }
+
+    function syncGradeTotalsFromCombination(grades) {
+      const counts = {
+        A: grades.filter(grade => grade.startsWith("A")).length,
+        B: grades.filter(grade => grade.startsWith("B")).length,
+        C: grades.filter(grade => grade === "C").length
+      };
+      document.getElementById("gradeACount").value = String(counts.A);
+      document.getElementById("gradeBCount").value = String(counts.B);
+      document.getElementById("gradeCCount").value = String(counts.C);
+      document.getElementById("gradePlusCount").value = String(gradePlusCount(grades));
+    }
+
+    function applyGradeTotals() {
+      const a = Number(document.getElementById("gradeACount").value);
+      const b = Number(document.getElementById("gradeBCount").value);
+      const c = Number(document.getElementById("gradeCCount").value);
+      const plus = Number(document.getElementById("gradePlusCount").value);
+      const result = document.getElementById("gradeCombinationResult");
+      const total = a + b + c;
+
+      if (total !== 5) {
+        result.classList.add("error");
+        result.textContent = `A、B、C 合計須為五科，目前為 ${total} 科`;
+        return;
+      }
+      if (plus > (a + b) * 2) {
+        result.classList.add("error");
+        result.textContent = `目前 ${a}A ${b}B 最多可有 +${(a + b) * 2}`;
+        return;
+      }
+
+      let remainingPlus = plus;
+      const buildGrades = (count, letter) => {
+        const grades = [];
+        for (let index = 0; index < count; index += 1) {
+          if (remainingPlus >= 2) {
+            grades.push(`${letter}++`);
+            remainingPlus -= 2;
+          } else if (remainingPlus === 1) {
+            grades.push(`${letter}+`);
+            remainingPlus -= 1;
+          } else {
+            grades.push(letter);
+          }
+        }
+        return grades;
+      };
+      const grades = [...buildGrades(a, "A"), ...buildGrades(b, "B"), ...Array(c).fill("C")];
+      document.getElementById("gradeCombination").value = grades.reduce((parts, grade) => {
+        const previous = parts[parts.length - 1];
+        if (previous && previous.grade === grade) previous.count += 1;
+        else parts.push({ grade, count: 1 });
+        return parts;
+      }, []).map(item => `${item.count === 1 ? "" : item.count}${item.grade}`).join(" ");
+      updateGradeCombination(false);
+    }
+
+    function updateGradeCombination(syncTotals = true) {
+      const input = document.getElementById("gradeCombination");
+      const result = document.getElementById("gradeCombinationResult");
+      const parsed = parseGradeCombination(input.value);
+      result.classList.toggle("error", Boolean(parsed.error));
+      if (parsed.error) {
+        result.textContent = parsed.error;
+        return;
+      }
+
+      if (syncTotals) syncGradeTotalsFromCombination(parsed.grades);
+
+      const calculated = calculateGradeCombination(fields.region.value, parsed.grades, document.getElementById("combinationComposition").value);
+      if (!calculated) return;
+      fields.points.value = String(calculated.points);
+      fields.credits.value = calculated.credits === null ? "" : String(calculated.credits);
+      const creditText = calculated.credits === null ? "" : `，積點 ${calculated.credits}`;
+      result.textContent = `${regionNames[fields.region.value] || fields.region.value}：積分 ${calculated.points}${creditText}，已自動帶入`;
+    }
+
+    function setNotFullyEnrolled() {
+      const credits = regionUsesCredits(fields.region.value) ? 0 : null;
+      const year = currentTaiwanYearLabel();
+      fields.points.value = "0";
+      fields.credits.value = credits === null ? "" : "0";
+      historicalScoresDraft = [
+        { year, points: 0, credits, note: "未滿招" },
+        ...historicalScoresDraft.filter(item => item.year !== year)
+      ];
+      renderHistoricalEditor();
+      showToast(`${regionNames[fields.region.value] || fields.region.value}已填入未滿招：積分 0${credits === null ? "" : "、積點 0"}`);
     }
 
     function normalizeHistoricalScores(scores) {
@@ -1953,7 +2174,16 @@
         }
       }
     });
-    fields.region.addEventListener("change", refreshDistrictOptions);
+    fields.region.addEventListener("change", () => {
+      refreshDistrictOptions();
+      updateGradeCombination();
+    });
+    ["gradeACount", "gradeBCount", "gradeCCount", "gradePlusCount"].forEach(id => {
+      document.getElementById(id).addEventListener("change", applyGradeTotals);
+    });
+    document.getElementById("gradeCombination").addEventListener("input", updateGradeCombination);
+    document.getElementById("combinationComposition").addEventListener("change", updateGradeCombination);
+    document.getElementById("setNotFullBtn").addEventListener("click", setNotFullyEnrolled);
     document.getElementById("directorySearch").addEventListener("input", renderDirectoryResults);
     document.getElementById("addHistoryBtn").addEventListener("click", () => addHistoricalScore());
     document.getElementById("copyCurrentHistoryBtn").addEventListener("click", () => {
