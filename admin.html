@@ -135,6 +135,58 @@
       flex-wrap: wrap;
     }
 
+    .toolbar {
+      display: grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      justify-content: end;
+      gap: 8px;
+    }
+
+    .toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .toolbar-group.batch { padding-left: 8px; border-left: 1px solid var(--line); }
+
+    .toolbar-tools { grid-column: 1 / -1; position: relative; }
+    .toolbar-tools summary {
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+      list-style: none;
+    }
+
+    .toolbar-tools summary::-webkit-details-marker { display: none; }
+    .toolbar-tools summary::after { content: "⌄"; margin-left: auto; color: var(--ink); font-size: 16px; }
+    .toolbar-tools[open] summary { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+    .toolbar-tools[open] summary::after { content: "⌃"; }
+    .toolbar-tools-menu {
+      position: absolute;
+      right: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      width: min(540px, calc(100vw - 28px));
+      margin-top: 6px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: white;
+      box-shadow: var(--shadow);
+    }
+
+    .list-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .list-actions .btn { min-height: 34px; padding: 6px 10px; font-size: 13px; }
+
     .btn {
       min-height: 40px;
       padding: 9px 13px;
@@ -272,6 +324,22 @@
     .form-grid { display: grid; gap: 13px; }
     .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+    .score-quick-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: -4px;
+      padding: 10px 12px;
+      border: 1px solid #fed7aa;
+      border-radius: var(--radius);
+      background: #fff7ed;
+    }
+
+    .score-quick-actions > span { color: #9a3412; font-size: 13px; font-weight: 900; }
+    .score-quick-actions .btn { min-height: 36px; padding: 7px 10px; }
+    .score-quick-actions small { color: #9a3412; font-weight: 700; }
+
     .grade-calculator {
       display: grid;
       gap: 10px;
@@ -380,6 +448,8 @@
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
     th { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: var(--muted); font-size: 12px; }
     tr:hover td { background: #fbfdff; }
+    tr.has-pending td { background: #fffbeb; }
+    tr.has-pending:hover td { background: #fef3c7; }
 
     .badge {
       display: inline-flex;
@@ -409,6 +479,72 @@
 
     .small-btn:hover { background: var(--soft); }
     .small-btn.danger { color: var(--red); }
+
+    .inline-input, .inline-select {
+      min-height: 34px;
+      padding: 6px 8px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    .inline-input.name { min-width: 150px; font-weight: 800; }
+    .inline-input.short { width: 78px; }
+    .inline-select { min-width: 90px; }
+    .inline-stack { display: grid; gap: 6px; min-width: 118px; }
+    .history-set-btn { width: auto; padding: 0 9px; white-space: nowrap; }
+
+    .pending-state { margin-left: auto; }
+
+    .edit-guide {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      margin: 0;
+      padding: 10px 14px;
+      border-bottom: 1px solid #fde68a;
+      background: #fffbeb;
+      color: #854d0e;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .edit-guide strong { color: #713f12; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(15, 23, 42, .55);
+    }
+
+    .modal-backdrop[hidden] { display: none; }
+
+    .modal {
+      width: min(760px, 100%);
+      max-height: min(720px, calc(100vh - 36px));
+      overflow: auto;
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: 0 24px 72px rgba(15, 23, 42, .32);
+    }
+
+    .modal-header, .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-header h2, .modal-header p { margin: 0; }
+    .modal-header p { margin-top: 4px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .modal-body { padding: 18px; }
+    .modal-footer { border-top: 1px solid var(--line); border-bottom: 0; justify-content: flex-end; }
+    .modal-history-rows { display: grid; gap: 9px; }
 
     .empty {
       padding: 42px 18px;
@@ -512,17 +648,20 @@
       }
       .toolbar {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 8px;
       }
-      .toolbar .btn:first-child {
-        grid-column: 1 / -1;
-      }
+      .toolbar-group { display: grid; grid-template-columns: 1fr 1fr; }
+      .toolbar-group.batch { padding-left: 0; border-left: 0; }
+      .toolbar-tools-menu { position: static; width: 100%; justify-content: stretch; box-shadow: none; }
+      .toolbar-tools-menu .btn { flex: 1 1 145px; }
       .toolbar .btn, .form-actions .btn {
         width: 100%;
         justify-content: center;
         flex: 1 1 150px;
       }
+      .list-actions { width: 100%; margin-left: 0; }
+      .list-actions .btn { flex: 1 1 140px; }
       .grid { gap: 12px; }
       .card {
         border-radius: 8px;
@@ -530,6 +669,7 @@
       }
       .card-header {
         padding: 13px 14px;
+        flex-wrap: wrap;
       }
       .card-header h2 { font-size: 16px; }
       .card-body { padding: 14px; }
@@ -638,7 +778,7 @@
 
       .row-actions {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 8px;
       }
 
@@ -651,7 +791,7 @@
     @media (max-width: 420px) {
       main { padding: 10px; }
       .toolbar { grid-template-columns: 1fr; }
-      .toolbar .btn:first-child { grid-column: auto; }
+      .toolbar-group { grid-template-columns: 1fr; }
       .kpis { grid-template-columns: 1fr; }
       h1 { font-size: 23px; }
       .subtitle { font-size: 13px; }
@@ -687,14 +827,25 @@
           <p class="subtitle">可直接管理 Supabase `schools` 資料表，支援新增、修改、刪除、搜尋、篩選、匯出，以及依區域與分數進行管理分析。</p>
         </div>
         <div class="toolbar">
-          <button class="btn primary" id="newBtn" type="button">新增學校</button>
-          <button class="btn" id="reloadBtn" type="button">重新讀取</button>
-          <button class="btn" id="duplicateBtn" type="button">檢查重複</button>
-          <button class="btn" id="archiveCurrentBtn" type="button">目前成績轉歷年</button>
-          <button class="btn danger" id="clearHistoryBtn" type="button">清空歷年成績</button>
-          <button class="btn" id="sampleBtn" type="button">下載 CSV 範例</button>
-          <button class="btn" id="exportBtn" type="button">匯出 CSV</button>
-          <button class="btn" id="uploadBtn" type="button">上傳 CSV</button>
+          <div class="toolbar-group" aria-label="基本操作">
+            <button class="btn primary" id="newBtn" type="button">新增學校</button>
+            <button class="btn" id="reloadBtn" type="button">重新讀取</button>
+          </div>
+          <div class="toolbar-group batch" aria-label="批次儲存">
+            <button class="btn success" id="saveAllBtn" type="button" disabled>儲存全部變更</button>
+            <button class="btn" id="discardAllBtn" type="button" disabled>捨棄暫存變更</button>
+          </div>
+          <details class="toolbar-tools">
+            <summary>資料工具（歷年、CSV、檢查）</summary>
+            <div class="toolbar-tools-menu">
+              <button class="btn" id="duplicateBtn" type="button">檢查重複</button>
+              <button class="btn" id="archiveCurrentBtn" type="button">目前成績轉歷年</button>
+              <button class="btn danger" id="clearHistoryBtn" type="button">清空歷年成績</button>
+              <button class="btn" id="sampleBtn" type="button">下載 CSV 範例</button>
+              <button class="btn" id="exportBtn" type="button">匯出 CSV</button>
+              <button class="btn" id="uploadBtn" type="button">上傳 CSV</button>
+            </div>
+          </details>
           <input class="file-input" id="csvFile" type="file" accept=".csv,text/csv" />
         </div>
       </section>
@@ -770,6 +921,11 @@
                 <label>積分 / 積點
                   <input id="credits" type="number" step="0.1" placeholder="可留空" />
                 </label>
+              </div>
+              <div class="score-quick-actions">
+                <span>快速設定</span>
+                <button class="btn warning" id="setNotFullBtn" type="button" title="依目前區域填入未滿招的 0 分資料">設為未滿招</button>
+                <small>會將目前分數設為 0，並加入今年的歷年成績。</small>
               </div>
               <details class="grade-calculator" aria-label="會考等級組合自動換算">
                 <summary>會考等級組合自動換算</summary>
@@ -890,7 +1046,6 @@
                 </label>
               </div>
               <div class="form-actions">
-                <button class="btn warning" id="setNotFullBtn" type="button" title="依目前區域填入未滿招的 0 分資料">設為未滿招</button>
                 <button class="btn success" id="saveBtn" type="submit">儲存到 Supabase</button>
                 <button class="btn" id="resetBtn" type="button">清除表單</button>
               </div>
@@ -902,6 +1057,11 @@
           <div class="card-header">
             <h2>資料列表</h2>
             <span class="badge" id="visibleCount">0 筆</span>
+            <span class="badge amber pending-state" id="pendingCount" hidden>0 筆待儲存</span>
+            <div class="list-actions">
+              <button class="btn success" id="saveListBtn" type="button" disabled>儲存暫存變更</button>
+              <button class="btn" id="discardListBtn" type="button" disabled>捨棄</button>
+            </div>
           </div>
           <div class="filters">
             <input id="searchInput" placeholder="搜尋名稱、類型、職群" />
@@ -928,6 +1088,7 @@
               <option value="name">名稱</option>
             </select>
           </div>
+          <p class="edit-guide"><strong>快速編輯：</strong>直接修改表格欄位，點到其他位置後即會加入暫存；黃色列代表尚未儲存。歷年成績請按該列的「歷年」設定。</p>
           <div class="table-wrap">
             <table>
               <thead>
@@ -976,6 +1137,25 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="historyModal" hidden role="dialog" aria-modal="true" aria-labelledby="historyModalTitle">
+    <section class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="historyModalTitle">設定歷年成績</h2>
+          <p id="historyModalSchoolName"></p>
+        </div>
+        <button class="small-btn" id="closeHistoryModalBtn" type="button" aria-label="關閉">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-history-rows" id="modalHistoricalRows"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="cancelHistoryModalBtn" type="button">取消</button>
+        <button class="btn success" id="saveHistoryModalBtn" type="button">套用到暫存變更</button>
+      </div>
+    </section>
+  </div>
 
   <script>
     const configKey = "school-admin-supabase-config";
@@ -1049,6 +1229,9 @@
     let schoolDirectory = [];
     let selectedDirectoryDepartments = [];
     let historicalScoresDraft = [];
+    let tableDrafts = new Map();
+    let historyModalSchoolId = null;
+    let modalHistoricalScoresDraft = [];
     let filters = { search: "", region: "all", ownership: "all", sortBy: "updated_at" };
     let loading = false;
     let nextAdminMutationAt = 0;
@@ -1286,6 +1469,8 @@
       try {
         const data = await callBackend("adminListSchools", { region: filters.region });
         schools = data.schools || [];
+        tableDrafts.clear();
+        updatePendingState();
         document.getElementById("loadedState").textContent = "已連線 Supabase";
         showToast("已讀取 Supabase 資料");
         render();
@@ -1299,6 +1484,7 @@
     function setLoading(value) {
       loading = value;
       document.querySelectorAll("button").forEach(button => button.disabled = value);
+      updatePendingState();
     }
 
     function nullableNumber(id) {
@@ -1717,7 +1903,7 @@
 
     function getFiltered() {
       const keyword = filters.search.trim().toLowerCase();
-      return schools
+      return schools.map(tableSchool)
         .filter(school => {
           const text = [school.name, school.type, school.ownership, school.vocational_group, school.region].join(" ").toLowerCase();
           return (!keyword || text.includes(keyword))
@@ -1751,30 +1937,169 @@
       document.getElementById("visibleCount").textContent = `${list.length} 筆`;
     }
 
+    function tableSchool(school) {
+      return tableDrafts.get(school.id) || school;
+    }
+
+    function updatePendingState() {
+      const count = tableDrafts.size;
+      const badge = document.getElementById("pendingCount");
+      badge.hidden = count === 0;
+      badge.textContent = `${count} 筆待儲存`;
+      ["saveAllBtn", "saveListBtn"].forEach(id => document.getElementById(id).disabled = count === 0 || loading);
+      ["discardAllBtn", "discardListBtn"].forEach(id => document.getElementById(id).disabled = count === 0 || loading);
+    }
+
+    function tableDraftMatchesOriginal(draft, original) {
+      const editableKeys = ["name", "region", "district", "type", "ownership", "vocational_group", "department", "points", "credits"];
+      const sameValue = (key) => {
+        const left = draft[key] ?? null;
+        const right = original[key] ?? null;
+        if (key === "points" || key === "credits") {
+          return (left === null && right === null) || (left !== null && right !== null && Number(left) === Number(right));
+        }
+        return left === right;
+      };
+      return editableKeys.every(sameValue)
+        && JSON.stringify(historicalScoresFromSchool(draft)) === JSON.stringify(historicalScoresFromSchool(original));
+    }
+
+    function updateTableDraft(id, key, value) {
+      const original = schools.find(item => item.id === id);
+      if (!original) return;
+      const draft = { ...(tableDrafts.get(id) || original) };
+      const numericKeys = new Set(["points", "credits"]);
+      const nullableTextKeys = new Set(["district", "type", "ownership", "vocational_group", "department"]);
+      draft[key] = key === "historical_scores"
+        ? value
+        : numericKeys.has(key) ? optionalNumber(value)
+        : nullableTextKeys.has(key) ? String(value ?? "").trim() || null
+        : String(value ?? "").trim();
+      if (key === "points" && draft.points === null) draft.points = 0;
+      if (tableDraftMatchesOriginal(draft, original)) tableDrafts.delete(id);
+      else tableDrafts.set(id, draft);
+      updatePendingState();
+    }
+
+    function discardAllTableDrafts() {
+      if (tableDrafts.size === 0) return;
+      if (!confirm(`捨棄 ${tableDrafts.size} 筆尚未儲存的列表變更？`)) return;
+      tableDrafts.clear();
+      updatePendingState();
+      render();
+      showToast("已捨棄暫存變更");
+    }
+
+    async function saveAllTableDrafts() {
+      const drafts = [...tableDrafts.values()];
+      if (drafts.length === 0) return;
+      if (!confirm(`準備儲存 ${drafts.length} 筆列表變更到 Supabase，是否繼續？`)) return;
+      setLoading(true);
+      try {
+        let done = 0;
+        for (const draft of drafts) {
+          const data = await callBackend("adminUpsertSchool", { school: draft });
+          const index = schools.findIndex(item => item.id === data.school.id);
+          if (index >= 0) schools[index] = data.school;
+          tableDrafts.delete(draft.id);
+          done += 1;
+          document.getElementById("loadedState").textContent = `儲存中 ${done}/${drafts.length}`;
+        }
+        render();
+        document.getElementById("loadedState").textContent = "已連線 Supabase";
+        showToast(`已儲存 ${done} 筆變更`);
+      } catch (error) {
+        render();
+        alert(error.message || "批次儲存失敗；尚未完成的變更仍會保留在列表中。");
+      } finally {
+        setLoading(false);
+        updatePendingState();
+      }
+    }
+
+    function openHistoryModal(id) {
+      const school = schools.find(item => item.id === id);
+      if (!school) return;
+      const current = tableSchool(school);
+      historyModalSchoolId = id;
+      modalHistoricalScoresDraft = historicalScoresFromSchool(current).map(item => ({ ...item }));
+      document.getElementById("historyModalSchoolName").textContent = current.name;
+      document.getElementById("historyModal").hidden = false;
+      renderModalHistoricalEditor();
+    }
+
+    function closeHistoryModal() {
+      document.getElementById("historyModal").hidden = true;
+      historyModalSchoolId = null;
+      modalHistoricalScoresDraft = [];
+    }
+
+    function renderModalHistoricalEditor() {
+      const container = document.getElementById("modalHistoricalRows");
+      container.innerHTML = modalHistoricalScoresDraft.length ? modalHistoricalScoresDraft.map((item, index) => `
+        <div class="history-row">
+          <label>年度<input value="${escapeHtml(item.year)}" placeholder="115年" oninput="updateModalHistoricalScore(${index}, 'year', this.value)" /></label>
+          <label>分數<input type="number" step="0.1" value="${item.points ?? ""}" oninput="updateModalHistoricalScore(${index}, 'points', this.value)" /></label>
+          <label>積分<input type="number" step="0.1" value="${item.credits ?? ""}" placeholder="可留空" oninput="updateModalHistoricalScore(${index}, 'credits', this.value)" /></label>
+          <label>備註<input value="${escapeHtml(item.note || "")}" placeholder="可留空" oninput="updateModalHistoricalScore(${index}, 'note', this.value)" /></label>
+          <button class="small-btn danger" type="button" title="移除" onclick="removeModalHistoricalScore(${index})">刪</button>
+        </div>
+      `).join("") : `<div class="history-empty">尚未設定歷年成績。</div>`;
+      container.insertAdjacentHTML("beforeend", '<button class="btn" type="button" id="addModalHistoryBtn">＋ 新增年度</button>');
+      document.getElementById("addModalHistoryBtn").addEventListener("click", () => {
+        modalHistoricalScoresDraft.unshift({ year: currentTaiwanYearLabel(), points: null, credits: null, note: "" });
+        renderModalHistoricalEditor();
+      });
+    }
+
+    function updateModalHistoricalScore(index, key, value) {
+      if (!modalHistoricalScoresDraft[index]) return;
+      modalHistoricalScoresDraft[index][key] = key === "points" || key === "credits" ? optionalNumber(value) : String(value || "").trim();
+    }
+
+    function removeModalHistoricalScore(index) {
+      modalHistoricalScoresDraft.splice(index, 1);
+      renderModalHistoricalEditor();
+    }
+
+    function saveHistoryModal() {
+      if (!historyModalSchoolId) return;
+      updateTableDraft(historyModalSchoolId, "historical_scores", normalizeHistoricalScores(modalHistoricalScoresDraft));
+      closeHistoryModal();
+      render();
+      showToast("歷年成績已加入暫存變更，請按「儲存全部變更」寫入 Supabase");
+    }
+
     function renderRows(list) {
       const duplicateIds = duplicateIdSet(schools);
-      document.getElementById("rows").innerHTML = list.map(school => `
-        <tr>
-          <td data-label="名稱"><strong>${escapeHtml(school.name)}</strong> ${duplicateIds.has(school.id) ? '<span class="badge amber">重複</span>' : ''}<br><small>${formatDate(school.updated_at)}</small></td>
-          <td data-label="區域">${regionNames[school.region] || escapeHtml(school.region)}</td>
-          <td data-label="地區">${escapeHtml(school.district || "-")}</td>
-          <td data-label="類型">${school.type ? `<span class="badge">${escapeHtml(school.type)}</span>` : "-"}</td>
-          <td data-label="屬性"><span class="badge ${school.ownership === "public" ? "green" : school.ownership === "private" ? "amber" : "gray"}">${escapeHtml(school.ownership || "未設定")}</span></td>
-          <td data-label="職群 / 科系">${escapeHtml(school.vocational_group || "-")}${school.department ? `<br><small>${escapeHtml(school.department)}</small>` : ""}</td>
-          <td data-label="分數"><strong>${num(school.points)}</strong></td>
-          <td data-label="積分">${school.credits == null ? "-" : num(school.credits)}</td>
+      document.getElementById("rows").innerHTML = list.map(original => {
+        const school = tableSchool(original);
+        const id = escapeHtml(original.id);
+        return `
+        <tr class="${tableDrafts.has(original.id) ? "has-pending" : ""}">
+          <td data-label="名稱"><input class="inline-input name" value="${escapeHtml(school.name)}" onchange="updateTableDraft('${id}', 'name', this.value)" /> ${duplicateIds.has(original.id) ? '<span class="badge amber">重複</span>' : ''}<br><small>${formatDate(original.updated_at)}</small></td>
+          <td data-label="區域"><select class="inline-select" onchange="updateTableDraft('${id}', 'region', this.value)">${Object.entries(regionNames).map(([value, label]) => `<option value="${value}" ${school.region === value ? "selected" : ""}>${label}</option>`).join("")}</select></td>
+          <td data-label="地區"><input class="inline-input" value="${escapeHtml(school.district || "")}" placeholder="可留空" onchange="updateTableDraft('${id}', 'district', this.value)" /></td>
+          <td data-label="類型"><input class="inline-input" value="${escapeHtml(school.type || "")}" placeholder="可留空" onchange="updateTableDraft('${id}', 'type', this.value)" /></td>
+          <td data-label="屬性"><select class="inline-select" onchange="updateTableDraft('${id}', 'ownership', this.value)"><option value="" ${!school.ownership ? "selected" : ""}>未設定</option><option value="public" ${school.ownership === "public" ? "selected" : ""}>public</option><option value="private" ${school.ownership === "private" ? "selected" : ""}>private</option></select></td>
+          <td data-label="職群 / 科系"><div class="inline-stack"><input class="inline-input" value="${escapeHtml(school.vocational_group || "")}" placeholder="職群" onchange="updateTableDraft('${id}', 'vocational_group', this.value)" /><input class="inline-input" value="${escapeHtml(school.department || "")}" placeholder="科系" onchange="updateTableDraft('${id}', 'department', this.value)" /></div></td>
+          <td data-label="分數"><input class="inline-input short" type="number" step="0.1" value="${school.points ?? 0}" onchange="updateTableDraft('${id}', 'points', this.value)" /></td>
+          <td data-label="積分"><input class="inline-input short" type="number" step="0.1" value="${school.credits ?? ""}" placeholder="-" onchange="updateTableDraft('${id}', 'credits', this.value)" /></td>
           <td data-label="歷年">${historicalSummary(school)}</td>
           <td data-label="最低門檻">${minimumText(school)}</td>
           <td data-label="操作">
             <div class="row-actions">
+              <button class="small-btn history-set-btn" type="button" title="設定歷年成績" onclick="openHistoryModal('${id}')">歷年</button>
               <button class="small-btn" type="button" title="編輯" onclick="editSchool('${school.id}')">改</button>
               <button class="small-btn" type="button" title="複製為新資料" onclick="cloneSchool('${school.id}')">複製</button>
               <button class="small-btn danger" type="button" title="刪除" onclick="deleteSchool('${school.id}')">刪</button>
             </div>
           </td>
         </tr>
-      `).join("");
+      `;
+      }).join("");
       document.getElementById("emptyState").hidden = list.length > 0;
+      updatePendingState();
     }
 
     function renderChart(list) {
@@ -2159,6 +2484,16 @@
       }
     });
     document.getElementById("reloadBtn").addEventListener("click", loadSchools);
+    document.getElementById("saveAllBtn").addEventListener("click", saveAllTableDrafts);
+    document.getElementById("saveListBtn").addEventListener("click", saveAllTableDrafts);
+    document.getElementById("discardAllBtn").addEventListener("click", discardAllTableDrafts);
+    document.getElementById("discardListBtn").addEventListener("click", discardAllTableDrafts);
+    document.getElementById("closeHistoryModalBtn").addEventListener("click", closeHistoryModal);
+    document.getElementById("cancelHistoryModalBtn").addEventListener("click", closeHistoryModal);
+    document.getElementById("saveHistoryModalBtn").addEventListener("click", saveHistoryModal);
+    document.getElementById("historyModal").addEventListener("click", event => {
+      if (event.target === event.currentTarget) closeHistoryModal();
+    });
     document.getElementById("newBtn").addEventListener("click", () => {
       resetForm();
       document.getElementById("editor").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2243,6 +2578,10 @@
     window.selectDirectoryDepartment = selectDirectoryDepartment;
     window.updateHistoricalScore = updateHistoricalScore;
     window.removeHistoricalScore = removeHistoricalScore;
+    window.updateTableDraft = updateTableDraft;
+    window.openHistoryModal = openHistoryModal;
+    window.updateModalHistoricalScore = updateModalHistoricalScore;
+    window.removeModalHistoricalScore = removeModalHistoricalScore;
   </script>
 </body>
 </html>
