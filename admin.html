@@ -444,12 +444,28 @@
     }
 
     .table-wrap { width: 100%; overflow: auto; max-height: 580px; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; min-width: 980px; }
+    table { width: 100%; border-collapse: collapse; min-width: 850px; }
     th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
     th { position: sticky; top: 0; z-index: 1; background: #f8fafc; color: var(--muted); font-size: 12px; }
     tr:hover td { background: #fbfdff; }
     tr.has-pending td { background: #fffbeb; }
     tr.has-pending:hover td { background: #fef3c7; }
+    .school-cell { min-width: 185px; }
+    .school-cell strong { display: inline-block; color: var(--ink); }
+    .cell-stack { display: grid; gap: 4px; min-width: max-content; }
+    .cell-meta { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .number-cell { min-width: 86px; text-align: center; }
+    .number-cell input { text-align: center; font-weight: 900; }
+    .history-cell { min-width: 104px; }
+    .history-cell small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; font-weight: 700; }
+
+    @media (min-width: 641px) {
+      th:first-child { left: 0; z-index: 3; }
+      td:first-child { position: sticky; left: 0; z-index: 1; background: white; box-shadow: 8px 0 12px -14px rgba(15, 23, 42, .8); }
+      tr:hover td:first-child { background: #fbfdff; }
+      tr.has-pending td:first-child { background: #fffbeb; }
+      tr.has-pending:hover td:first-child { background: #fef3c7; }
+    }
 
     .badge {
       display: inline-flex;
@@ -1088,17 +1104,15 @@
               <option value="name">名稱</option>
             </select>
           </div>
-          <p class="edit-guide"><strong>快速編輯：</strong>直接修改表格欄位，點到其他位置後即會加入暫存；黃色列代表尚未儲存。歷年成績請按該列的「歷年」設定。</p>
+          <p class="edit-guide"><strong>快速編輯：</strong>此列表僅可修改分數與積分，點到其他位置後即會加入暫存；黃色列代表尚未儲存。其他基本資料請按「改」，歷年成績請按「歷年」設定。</p>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
                   <th>名稱</th>
-                  <th>區域</th>
-                  <th>地區</th>
-                  <th>類型</th>
-                  <th>屬性</th>
-                  <th>職群</th>
+                  <th>所在地</th>
+                  <th>學校類別</th>
+                  <th>職群／科系</th>
                   <th>分數</th>
                   <th>積分</th>
                   <th>歷年</th>
@@ -2077,15 +2091,13 @@
         const id = escapeHtml(original.id);
         return `
         <tr class="${tableDrafts.has(original.id) ? "has-pending" : ""}">
-          <td data-label="名稱"><input class="inline-input name" value="${escapeHtml(school.name)}" onchange="updateTableDraft('${id}', 'name', this.value)" /> ${duplicateIds.has(original.id) ? '<span class="badge amber">重複</span>' : ''}<br><small>${formatDate(original.updated_at)}</small></td>
-          <td data-label="區域"><select class="inline-select" onchange="updateTableDraft('${id}', 'region', this.value)">${Object.entries(regionNames).map(([value, label]) => `<option value="${value}" ${school.region === value ? "selected" : ""}>${label}</option>`).join("")}</select></td>
-          <td data-label="地區"><input class="inline-input" value="${escapeHtml(school.district || "")}" placeholder="可留空" onchange="updateTableDraft('${id}', 'district', this.value)" /></td>
-          <td data-label="類型"><input class="inline-input" value="${escapeHtml(school.type || "")}" placeholder="可留空" onchange="updateTableDraft('${id}', 'type', this.value)" /></td>
-          <td data-label="屬性"><select class="inline-select" onchange="updateTableDraft('${id}', 'ownership', this.value)"><option value="" ${!school.ownership ? "selected" : ""}>未設定</option><option value="public" ${school.ownership === "public" ? "selected" : ""}>public</option><option value="private" ${school.ownership === "private" ? "selected" : ""}>private</option></select></td>
-          <td data-label="職群 / 科系"><div class="inline-stack"><input class="inline-input" value="${escapeHtml(school.vocational_group || "")}" placeholder="職群" onchange="updateTableDraft('${id}', 'vocational_group', this.value)" /><input class="inline-input" value="${escapeHtml(school.department || "")}" placeholder="科系" onchange="updateTableDraft('${id}', 'department', this.value)" /></div></td>
-          <td data-label="分數"><input class="inline-input short" type="number" step="0.1" value="${school.points ?? 0}" onchange="updateTableDraft('${id}', 'points', this.value)" /></td>
-          <td data-label="積分"><input class="inline-input short" type="number" step="0.1" value="${school.credits ?? ""}" placeholder="-" onchange="updateTableDraft('${id}', 'credits', this.value)" /></td>
-          <td data-label="歷年">${historicalSummary(school)}</td>
+          <td class="school-cell" data-label="名稱"><strong>${escapeHtml(school.name)}</strong> ${duplicateIds.has(original.id) ? '<span class="badge amber">重複</span>' : ''}<br><small class="cell-meta">${formatDate(original.updated_at)}</small></td>
+          <td data-label="所在地"><div class="cell-stack"><span class="badge">${regionNames[school.region] || escapeHtml(school.region)}</span><span class="cell-meta">${escapeHtml(school.district || "未設定地區")}</span></div></td>
+          <td data-label="學校類別"><div class="cell-stack"><span>${escapeHtml(school.type || "未設定類型")}</span><span class="badge ${school.ownership === "public" ? "green" : school.ownership === "private" ? "amber" : "gray"}">${escapeHtml(school.ownership || "未設定")}</span></div></td>
+          <td data-label="職群／科系"><div class="cell-stack"><span>${escapeHtml(school.vocational_group || "-")}</span>${school.department ? `<span class="cell-meta">${escapeHtml(school.department)}</span>` : ""}</div></td>
+          <td class="number-cell" data-label="分數"><input class="inline-input short" type="number" step="0.1" value="${school.points ?? 0}" onchange="updateTableDraft('${id}', 'points', this.value)" /></td>
+          <td class="number-cell" data-label="積分"><input class="inline-input short" type="number" step="0.1" value="${school.credits ?? ""}" placeholder="-" onchange="updateTableDraft('${id}', 'credits', this.value)" /></td>
+          <td class="history-cell" data-label="歷年">${historicalSummary(school)}${historicalScoresFromSchool(school).length ? `<small>共 ${historicalScoresFromSchool(school).length} 筆</small>` : ""}</td>
           <td data-label="最低門檻">${minimumText(school)}</td>
           <td data-label="操作">
             <div class="row-actions">
